@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SportReserve - Gestión de Reservas</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Vue 3 vía CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body class="bg-light">
+
+<div id="app" class="container py-4">
+  <!-- Encabezado -->
+  <header class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <h2 class="h4 text-primary m-0">SportReserve</h2>
+    <div v-if="user">
+      <span class="me-3">Usuario: <strong>{{ user.name }}</strong> ({{ user.role }})</span>
+      <button @click="logout" class="btn btn-outline-danger btn-sm">Cerrar Sesión</button>
+    </div>
+  </header>
+
+  <!-- Mensajes de Notificación en UI -->
+  <div v-if="message" :class="['alert', isError ? 'alert-danger' : 'alert-success']" role="alert">
+    {{ message }}
+  </div>
+
+  <!-- VISTA 1: Autenticación (Login y Registro) -->
+  <div v-if="!user" class="row justify-content-center">
+    <div class="col-md-5">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title text-center mb-3">{{ isRegister ? 'Crear Cuenta' : 'Iniciar Sesión' }}</h5>
+          <form @submit.prevent="isRegister ? handleRegister() : handleLogin()">
+            <div v-if="isRegister" class="mb-3">
+              <label class="form-label">Nombre</label>
+              <input v-model="formAuth.name" type="text" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Correo Electrónico</label>
+              <input v-model="formAuth.email" type="email" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Contraseña</label>
+              <input v-model="formAuth.password" type="password" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">
+              {{ isRegister ? 'Registrarse' : 'Ingresar' }}
+            </button>
+          </form>
+          <div class="text-center mt-3">
+            <a href="#" @click.prevent="isRegister = !isRegister" class="text-decoration-none small">
+              {{ isRegister ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate aquí' }}
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISTA 2: Panel de Reservas (Dashboard) -->
+  <div v-else>
+    <div class="row g-4">
+      <!-- Formulario de Creación de Reserva -->
+      <div class="col-md-5">
+        <div class="card shadow-sm">
+          <div class="card-header bg-white"><strong>Nueva Reserva</strong></div>
+          <div class="card-body">
+            <form @submit.prevent="createReservation">
+              <div class="mb-3">
+                <label class="form-label">Espacio Deportivo</label>
+                <select v-model="formBooking.spaceId" class="form-select" @change="fetchAvailability" required>
+                  <option value="" disabled>Seleccione un espacio</option>
+                  <option v-for="s in spaces" :key="s.id" :value="s.id">{{ s.name }} ({{ s.type }})</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Fecha</label>
+                <input v-model="formBooking.date" type="date" class="form-control" @change="fetchAvailability" required>
+              </div>
+              <div class="row g-2 mb-3">
+                <div class="col">
+                  <label class="form-label">Hora Inicio</label>
+                  <input v-model="formBooking.startTime" type="time" class="form-control" required>
+                </div>
+                <div class="col">
+                  <label class="form-label">Hora Fin</label>
+                  <input v-model="formBooking.endTime" type="time" class="form-control" required>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-success w-100">Confirmar Reserva</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Franjas Bloqueadas / Ocupadas -->
+        <div class="card shadow-sm mt-3" v-if="occupiedSlots.length > 0">
+          <div class="card-header bg-light small fw-bold text-danger">Horarios ocupados en esta fecha</div>
+          <ul class="list-group list-group-flush small">
+            <li v-for="(slot, i) in occupiedSlots" :key="i" class="list-group-item">
+              Ocupado: {{ slot.start_time.slice(0,5) }} - {{ slot.end_time.slice(0,5) }}
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Listado: Mis Reservas -->
+      <div class="col-md-7">
+        <div class="card shadow-sm">
+          <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <strong>Mis Reservas Registradas</strong>
+            <button @click="fetchMyReservations" class="btn btn-outline-secondary btn-sm">Actualizar</button>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Espacio</th>
+                    <th>Fecha</th>
+                    <th>Horario</th>
+                    <th>Estado</th>
+                    <th>Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="r in myReservations" :key="r.id">
+                    <td>{{ r.space_name }}</td>
+                    <td>{{ r.reservation_date.split('T')[0] }}</td>
+                    <td>{{ r.start_time.slice(0,5) }} - {{ r.end_time.slice(0,5) }}</td>
+                    <td>
+                      <span :class="['badge', r.status === 'CONFIRMED' ? 'bg-success' : 'bg-secondary']">
+                        {{ r.status }}
+                      </span>
+                    </td>
+                    <td>
+                      <button v-if="r.status === 'CONFIRMED'" @click="cancelReservation(r.id)" class="btn btn-outline-danger btn-sm">
+                        Cancelar
+                      </button>
+                    </td>
+                  </tr>
+                  <tr v-if="myReservations.length === 0">
+                    <td colspan="5" class="text-center text-muted py-3">No tienes reservas activas</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const { createApp } = Vue;
+  const API_URL = 'http://localhost:3000/api';
+
+  createApp({
+    data() {
+      return {
+        user: JSON.parse(localStorage.getItem('sr_user')) || null,
+        token: localStorage.getItem('sr_token') || '',
+        isRegister: false,
+        spaces: [],
+        occupiedSlots: [],
+        myReservations: [],
+        message: '',
+        isError: false,
+        formAuth: { name: '', email: '', password: '' },
+        formBooking: { spaceId: '', date: '', startTime: '08:00', endTime: '09:00' }
+      };
+    },
+    mounted() {
+      this.fetchSpaces();
+      if (this.token) this.fetchMyReservations();
+    },
+    methods: {
+      showMessage(msg, err = false) {
+        this.message = msg;
+        this.isError = err;
+        setTimeout(() => this.message = '', 4500);
+      },
+      async handleLogin() {
+        try {
+          const res = await fetch(`${API_URL}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: this.formAuth.email, password: this.formAuth.password })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message);
+
+          this.token = data.token;
+          this.user = data.user;
+          localStorage.setItem('sr_token', data.token);
+          localStorage.setItem('sr_user', JSON.stringify(data.user));
+          this.fetchMyReservations();
+          this.showMessage('Bienvenido al sistema');
+        } catch (err) {
+          this.showMessage(err.message, true);
+        }
+      },
+      async handleRegister() {
+        try {
+          const res = await fetch(`${API_URL}/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(this.formAuth)
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message);
+          this.showMessage('Usuario registrado. Inicia sesión.');
+          this.isRegister = false;
+        } catch (err) {
+          this.showMessage(err.message, true);
+        }
+      },
+      logout() {
+        this.user = null;
+        this.token = '';
+        localStorage.removeItem('sr_token');
+        localStorage.removeItem('sr_user');
+      },
+      async fetchSpaces() {
+        try {
+          const res = await fetch(`${API_URL}/spaces`);
+          this.spaces = await res.json();
+        } catch (err) {
+          console.error('Error al cargar espacios');
+        }
+      },
+      async fetchAvailability() {
+        if (!this.formBooking.spaceId || !this.formBooking.date) return;
+        try {
+          const res = await fetch(`${API_URL}/reservations/availability?spaceId=${this.formBooking.spaceId}&date=${this.formBooking.date}`);
+          this.occupiedSlots = await res.json();
+        } catch (err) {
+          console.error(err);
+        }
+      },
+      async fetchMyReservations() {
+        try {
+          const res = await fetch(`${API_URL}/reservations/my`, {
+            headers: { 'Authorization': `Bearer ${this.token}` }
+          });
+          this.myReservations = await res.json();
+        } catch (err) {
+          console.error(err);
+        }
+      },
+      async createReservation() {
+        try {
+          const res = await fetch(`${API_URL}/reservations`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${this.token}`
+            },
+            body: JSON.stringify({
+              spaceId: this.formBooking.spaceId,
+              date: this.formBooking.date,
+              startTime: this.formBooking.startTime + ':00',
+              endTime: this.formBooking.endTime + ':00'
+            })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message);
+
+          this.showMessage('¡Reserva creada exitosamente!');
+          this.fetchMyReservations();
+          this.fetchAvailability();
+        } catch (err) {
+          this.showMessage(err.message, true);
+        }
+      },
+      async cancelReservation(id) {
+        if (!confirm('¿Seguro que deseas cancelar esta reserva?')) return;
+        try {
+          const res = await fetch(`${API_URL}/reservations/${id}/cancel`, {
+            method: 'PATCH',
+            headers: { 'Authorization': `Bearer ${this.token}` }
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message);
+
+          this.showMessage('Reserva cancelada correctamente');
+          this.fetchMyReservations();
+          this.fetchAvailability();
+        } catch (err) {
+          this.showMessage(err.message, true);
+        }
+      }
+    }
+  }).mount('#app');
+</script>
+</body>
+</html>
