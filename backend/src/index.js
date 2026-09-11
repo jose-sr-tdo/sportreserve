@@ -29,6 +29,10 @@ app.get('/api/auth/profile', authenticateToken, AuthController.getProfile);
 app.get('/api/spaces', SpaceController.getAll);
 app.post('/api/spaces', authenticateToken, authorizeRoles('ADMIN'), SpaceController.create);
 
+// Rutas de Reservas
+// Consulta pública de disponibilidad por fecha y espacio
+app.get('/api/reservations/availability', BookingController.getBySpaceAndDate);
+
 // Rutas de Reservas (Protegidas)
 app.post('/api/reservations', authenticateToken, BookingController.create);
 app.get('/api/reservations/my', authenticateToken, BookingController.getMine);

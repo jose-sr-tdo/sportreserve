@@ -46,4 +46,15 @@ export class ReservationRepository {
     await pool.query('UPDATE reservations SET status = ? WHERE id = ?', [status, id]);
     return { id, status };
   }
+
+  static async findBySpaceAndDate(spaceId, date) {
+    const query = `
+      SELECT start_time, end_time, status 
+      FROM reservations 
+      WHERE space_id = ? AND reservation_date = ? AND status = 'CONFIRMED'
+      ORDER BY start_time ASC
+    `;
+    const [rows] = await pool.query(query, [spaceId, date]);
+    return rows;
+  }
 }

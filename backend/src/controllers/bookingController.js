@@ -1,4 +1,5 @@
 import { BookingService } from '../services/bookingService.js';
+import { ReservationRepository } from '../repositories/reservationRepository.js';
 
 export class BookingController {
   static async create(req, res) {
@@ -47,6 +48,19 @@ export class BookingController {
       return res.status(200).json(result);
     } catch (error) {
       return res.status(error.statusCode || 500).json({ message: error.message });
+    }
+  }
+
+  static async getBySpaceAndDate(req, res) {
+    try {
+      const { spaceId, date } = req.query;
+      if (!spaceId || !date) {
+        return res.status(400).json({ message: 'spaceId y date son obligatorios' });
+      }
+      const reservations = await ReservationRepository.findBySpaceAndDate(spaceId, date);
+      return res.status(200).json(reservations);
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
     }
   }
 }
