@@ -3,55 +3,205 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SportReserve - Gestión de Reservas</title>
+  <title>SportReserve — Gestión de Reservas Deportivas</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Vue 3 vía CDN -->
+  
+  <!-- Vue 3 CDN -->
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+  <style>
+    :root {
+      --primary-pastel: #3d6a99;       /* Azul deportivo suave */
+      --primary-hover: #2f5379;
+      --accent-soft: #f4846c;          /* Coral/Rojo pastel */
+      --accent-soft-hover: #e06d55;
+      --bg-page: #f6f8fa;              /* Fondo claro relajante */
+      --card-bg: #ffffff;
+      --border-subtle: #e2e8f0;
+      --text-main: #334155;
+      --text-muted: #64748b;
+      --badge-confirmed: #e8f5e9;
+      --badge-confirmed-txt: #2e7d32;
+      --badge-cancelled: #f1f5f9;
+      --badge-cancelled-txt: #64748b;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Tipografía para Títulos */
+    h1, h2, h3, h4, h5, h6, .brand-title, .card-title {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    /* Tarjetas con sombras suaves */
+    .card {
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      background-color: var(--card-bg);
+    }
+
+    .card-header {
+      background-color: transparent;
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 1rem 1.25rem;
+    }
+
+    /* Botones primarios (Azul Suave) */
+    .btn-sport-primary {
+      background-color: var(--primary-pastel);
+      border: none;
+      color: #ffffff;
+      font-weight: 500;
+      border-radius: 9px;
+      padding: 0.6rem 1.2rem;
+      transition: all 0.2s ease;
+    }
+    .btn-sport-primary:hover {
+      background-color: var(--primary-hover);
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    /* Botones de acción / Cancelar (Rojo/Coral Pastel) */
+    .btn-sport-accent {
+      background-color: var(--accent-soft);
+      border: none;
+      color: #ffffff;
+      font-weight: 500;
+      border-radius: 9px;
+      padding: 0.6rem 1.2rem;
+      transition: all 0.2s ease;
+    }
+    .btn-sport-accent:hover {
+      background-color: var(--accent-soft-hover);
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    .btn-sport-outline-danger {
+      border: 1px solid #fca5a5;
+      color: #dc2626;
+      background-color: #fef2f2;
+      border-radius: 7px;
+      padding: 0.25rem 0.65rem;
+      font-size: 0.82rem;
+    }
+    .btn-sport-outline-danger:hover {
+      background-color: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .form-control, .form-select {
+      border: 1px solid var(--border-subtle);
+      border-radius: 9px;
+      padding: 0.6rem 0.85rem;
+      font-size: 0.95rem;
+      background-color: #ffffff;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: var(--primary-pastel);
+      box-shadow: 0 0 0 3px rgba(61, 106, 153, 0.12);
+    }
+
+    /* Insignias de Estado Personalizadas */
+    .badge-status-confirmed {
+      background-color: var(--badge-confirmed);
+      color: var(--badge-confirmed-txt);
+      font-weight: 600;
+      padding: 0.4em 0.75em;
+      border-radius: 20px;
+    }
+    .badge-status-cancelled {
+      background-color: var(--badge-cancelled);
+      color: var(--badge-cancelled-txt);
+      font-weight: 500;
+      padding: 0.4em 0.75em;
+      border-radius: 20px;
+    }
+
+    /* Barra Superior */
+    .navbar-sport {
+      background-color: #ffffff;
+      border-bottom: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 0.85rem 1.4rem;
+    }
+  </style>
 </head>
-<body class="bg-light">
+<body>
 
 <div id="app" class="container py-4">
-  <!-- Encabezado -->
-  <header class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
-    <h2 class="h4 text-primary m-0">SportReserve</h2>
-    <div v-if="user">
-      <span class="me-3">Usuario: <strong>{{ user.name }}</strong> ({{ user.role }})</span>
-      <button @click="logout" class="btn btn-outline-danger btn-sm">Cerrar Sesión</button>
+
+  <!-- Barra de Navegación / Encabezado -->
+  <header class="navbar-sport d-flex justify-content-between align-items-center mb-4 shadow-sm">
+    <div class="d-flex align-items-center gap-2">
+      <div style="width: 12px; height: 12px; border-radius: 50%; background-color: var(--accent-soft);"></div>
+      <h2 class="h5 m-0 text-dark brand-title">SportReserve</h2>
+    </div>
+    
+    <div v-if="user" class="d-flex align-items-center gap-3">
+      <span class="small text-muted">
+        Hola, <strong class="text-dark">{{ user.name }}</strong> 
+        <span class="badge bg-light text-secondary ms-1 border">{{ user.role }}</span>
+      </span>
+      <button @click="logout" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+        Salir
+      </button>
     </div>
   </header>
 
-  <!-- Mensajes de Notificación en UI -->
-  <div v-if="message" :class="['alert', isError ? 'alert-danger' : 'alert-success']" role="alert">
+  <!-- Mensajes Globales de Estado -->
+  <div v-if="message" 
+       :class="['alert', isError ? 'alert-danger border-danger-subtle' : 'alert-success border-success-subtle', 'rounded-3 shadow-sm']" 
+       role="alert">
     {{ message }}
   </div>
 
-  <!-- VISTA 1: Autenticación (Login y Registro) -->
-  <div v-if="!user" class="row justify-content-center">
-    <div class="col-md-5">
-      <div class="card shadow-sm">
+  <!-- VISTA 1: Autenticación (Login & Registro) -->
+  <div v-if="!user" class="row justify-content-center py-5">
+    <div class="col-md-4">
+      <div class="card p-3">
         <div class="card-body">
-          <h5 class="card-title text-center mb-3">{{ isRegister ? 'Crear Cuenta' : 'Iniciar Sesión' }}</h5>
+          <h4 class="card-title text-center mb-1 text-dark">{{ isRegister ? 'Registrarse' : 'Iniciar Sesión' }}</h4>
+          <p class="text-center text-muted small mb-4">Acceso a la plataforma de reservas deportivas</p>
+
           <form @submit.prevent="isRegister ? handleRegister() : handleLogin()">
             <div v-if="isRegister" class="mb-3">
-              <label class="form-label">Nombre</label>
-              <input v-model="formAuth.name" type="text" class="form-control" required>
+              <label class="form-label small text-muted">Nombre completo</label>
+              <input v-model="formAuth.name" type="text" class="form-control" required placeholder="Ej. Carlos Mendoza">
             </div>
             <div class="mb-3">
-              <label class="form-label">Correo Electrónico</label>
-              <input v-model="formAuth.email" type="email" class="form-control" required>
+              <label class="form-label small text-muted">Correo electrónico</label>
+              <input v-model="formAuth.email" type="email" class="form-control" required placeholder="correo@ejemplo.com">
             </div>
-            <div class="mb-3">
-              <label class="form-label">Contraseña</label>
-              <input v-model="formAuth.password" type="password" class="form-control" required>
+            <div class="mb-4">
+              <label class="form-label small text-muted">Contraseña</label>
+              <input v-model="formAuth.password" type="password" class="form-control" required placeholder="••••••••">
             </div>
-            <button type="submit" class="btn btn-primary w-100">
-              {{ isRegister ? 'Registrarse' : 'Ingresar' }}
+            <button type="submit" class="btn btn-sport-primary w-100">
+              {{ isRegister ? 'Completar Registro' : 'Entrar a la Plataforma' }}
             </button>
           </form>
-          <div class="text-center mt-3">
-            <a href="#" @click.prevent="isRegister = !isRegister" class="text-decoration-none small">
-              {{ isRegister ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate aquí' }}
+
+          <div class="text-center mt-3 pt-2 border-top">
+            <a href="#" @click.prevent="isRegister = !isRegister" class="text-decoration-none small text-muted">
+              {{ isRegister ? '¿Ya tienes una cuenta? Inicia sesión' : '¿Aún no tienes cuenta? Regístrate gratis' }}
             </a>
           </div>
         </div>
@@ -59,89 +209,102 @@
     </div>
   </div>
 
-  <!-- VISTA 2: Panel de Reservas (Dashboard) -->
+  <!-- VISTA 2: Panel de Gestión y Calendario -->
   <div v-else>
     <div class="row g-4">
-      <!-- Formulario de Creación de Reserva -->
-      <div class="col-md-5">
-        <div class="card shadow-sm">
-          <div class="card-header bg-white"><strong>Nueva Reserva</strong></div>
+      
+      <!-- Columna Izquierda: Creación de Reserva -->
+      <div class="col-lg-4 col-md-5">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="m-0 text-dark h6">Agendar Nuevo Espacio</h5>
+          </div>
           <div class="card-body">
             <form @submit.prevent="createReservation">
               <div class="mb-3">
-                <label class="form-label">Espacio Deportivo</label>
+                <label class="form-label small text-muted">Espacio Deportivo</label>
                 <select v-model="formBooking.spaceId" class="form-select" @change="fetchAvailability" required>
-                  <option value="" disabled>Seleccione un espacio</option>
-                  <option v-for="s in spaces" :key="s.id" :value="s.id">{{ s.name }} ({{ s.type }})</option>
+                  <option value="" disabled>Seleccione un espacio...</option>
+                  <option v-for="s in spaces" :key="s.id" :value="s.id">{{ s.name }}</option>
                 </select>
               </div>
+
               <div class="mb-3">
-                <label class="form-label">Fecha</label>
+                <label class="form-label small text-muted">Fecha del Partido / Actividad</label>
                 <input v-model="formBooking.date" type="date" class="form-control" @change="fetchAvailability" required>
               </div>
-              <div class="row g-2 mb-3">
+
+              <div class="row g-2 mb-4">
                 <div class="col">
-                  <label class="form-label">Hora Inicio</label>
+                  <label class="form-label small text-muted">Hora Inicio</label>
                   <input v-model="formBooking.startTime" type="time" class="form-control" required>
                 </div>
                 <div class="col">
-                  <label class="form-label">Hora Fin</label>
+                  <label class="form-label small text-muted">Hora Fin</label>
                   <input v-model="formBooking.endTime" type="time" class="form-control" required>
                 </div>
               </div>
-              <button type="submit" class="btn btn-success w-100">Confirmar Reserva</button>
+
+              <button type="submit" class="btn btn-sport-accent w-100">
+                Confirmar Reserva
+              </button>
             </form>
           </div>
         </div>
 
-        <!-- Franjas Bloqueadas / Ocupadas -->
-        <div class="card shadow-sm mt-3" v-if="occupiedSlots.length > 0">
-          <div class="card-header bg-light small fw-bold text-danger">Horarios ocupados en esta fecha</div>
+        <!-- Consulta Reactiva de Franjas Ocupadas -->
+        <div class="card mt-3" v-if="occupiedSlots.length > 0">
+          <div class="card-header bg-light">
+            <span class="small fw-semibold text-danger">⚠️ Horarios no disponibles para esta fecha</span>
+          </div>
           <ul class="list-group list-group-flush small">
-            <li v-for="(slot, i) in occupiedSlots" :key="i" class="list-group-item">
-              Ocupado: {{ slot.start_time.slice(0,5) }} - {{ slot.end_time.slice(0,5) }}
+            <li v-for="(slot, i) in occupiedSlots" :key="i" class="list-group-item d-flex justify-content-between text-muted">
+              <span>Franja ocupada:</span>
+              <strong class="text-danger">{{ slot.start_time.slice(0,5) }} - {{ slot.end_time.slice(0,5) }}</strong>
             </li>
           </ul>
         </div>
       </div>
 
-      <!-- Listado: Mis Reservas -->
-      <div class="col-md-7">
-        <div class="card shadow-sm">
-          <div class="card-header bg-white d-flex justify-content-between align-items-center">
-            <strong>Mis Reservas Registradas</strong>
-            <button @click="fetchMyReservations" class="btn btn-outline-secondary btn-sm">Actualizar</button>
+      <!-- Columna Derecha: Listado de Reservas -->
+      <div class="col-lg-8 col-md-7">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="m-0 text-dark h6">Mis Reservas Programadas</h5>
+            <button @click="fetchMyReservations" class="btn btn-light btn-sm border text-muted px-2 py-1 rounded-3">
+              ↻ Refrescar
+            </button>
           </div>
           <div class="card-body p-0">
             <div class="table-responsive">
               <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+                <thead class="table-light text-muted small">
                   <tr>
-                    <th>Espacio</th>
+                    <th class="ps-3">Espacio Deportivo</th>
                     <th>Fecha</th>
                     <th>Horario</th>
                     <th>Estado</th>
-                    <th>Acción</th>
+                    <th class="text-end pe-3">Acción</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody class="small">
                   <tr v-for="r in myReservations" :key="r.id">
-                    <td>{{ r.space_name }}</td>
+                    <td class="ps-3 fw-medium text-dark">{{ r.space_name }}</td>
                     <td>{{ r.reservation_date.split('T')[0] }}</td>
-                    <td>{{ r.start_time.slice(0,5) }} - {{ r.end_time.slice(0,5) }}</td>
+                    <td>{{ r.start_time.slice(0,5) }} a {{ r.end_time.slice(0,5) }}</td>
                     <td>
-                      <span :class="['badge', r.status === 'CONFIRMED' ? 'bg-success' : 'bg-secondary']">
-                        {{ r.status }}
+                      <span :class="r.status === 'CONFIRMED' ? 'badge-status-confirmed' : 'badge-status-cancelled'">
+                        {{ r.status === 'CONFIRMED' ? 'Confirmada' : 'Cancelada' }}
                       </span>
                     </td>
-                    <td>
-                      <button v-if="r.status === 'CONFIRMED'" @click="cancelReservation(r.id)" class="btn btn-outline-danger btn-sm">
+                    <td class="text-end pe-3">
+                      <button v-if="r.status === 'CONFIRMED'" @click="cancelReservation(r.id)" class="btn-sport-outline-danger">
                         Cancelar
                       </button>
                     </td>
                   </tr>
                   <tr v-if="myReservations.length === 0">
-                    <td colspan="5" class="text-center text-muted py-3">No tienes reservas activas</td>
+                    <td colspan="5" class="text-center text-muted py-4">No tienes reservas activas en este momento.</td>
                   </tr>
                 </tbody>
               </table>
@@ -149,13 +312,16 @@
           </div>
         </div>
       </div>
+
     </div>
   </div>
+
 </div>
 
 <script>
   const { createApp } = Vue;
-  const API_URL = 'http://localhost:3000/api';
+  // URL de producción apuntando a Render
+  const API_URL = 'https://sportreserve-api-s2ni.onrender.com/api';
 
   createApp({
     data() {
@@ -197,7 +363,7 @@
           localStorage.setItem('sr_token', data.token);
           localStorage.setItem('sr_user', JSON.stringify(data.user));
           this.fetchMyReservations();
-          this.showMessage('Bienvenido al sistema');
+          this.showMessage('Inicio de sesión exitoso');
         } catch (err) {
           this.showMessage(err.message, true);
         }
@@ -211,7 +377,7 @@
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.message);
-          this.showMessage('Usuario registrado. Inicia sesión.');
+          this.showMessage('Usuario registrado correctamente. Por favor inicia sesión.');
           this.isRegister = false;
         } catch (err) {
           this.showMessage(err.message, true);
@@ -228,7 +394,7 @@
           const res = await fetch(`${API_URL}/spaces`);
           this.spaces = await res.json();
         } catch (err) {
-          console.error('Error al cargar espacios');
+          console.error('Error al consultar espacios');
         }
       },
       async fetchAvailability() {
@@ -268,7 +434,7 @@
           const data = await res.json();
           if (!res.ok) throw new Error(data.message);
 
-          this.showMessage('¡Reserva creada exitosamente!');
+          this.showMessage('¡Reserva confirmada con éxito!');
           this.fetchMyReservations();
           this.fetchAvailability();
         } catch (err) {
@@ -276,7 +442,7 @@
         }
       },
       async cancelReservation(id) {
-        if (!confirm('¿Seguro que deseas cancelar esta reserva?')) return;
+        if (!confirm('¿Deseas cancelar esta reserva? La franja horaria quedará libre.')) return;
         try {
           const res = await fetch(`${API_URL}/reservations/${id}/cancel`, {
             method: 'PATCH',
