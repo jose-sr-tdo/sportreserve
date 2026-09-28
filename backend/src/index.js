@@ -6,6 +6,7 @@ import { AuthController } from './controllers/authController.js';
 import { SpaceController } from './controllers/spaceController.js';
 import { BookingController } from './controllers/bookingController.js';
 import { authenticateToken, authorizeRoles } from './middlewares/authMiddleware.js';
+import { NavigationService } from './services/navigationService.js';
 
 dotenv.config();
 
@@ -37,6 +38,20 @@ app.get('/api/reservations/availability', BookingController.getBySpaceAndDate);
 app.post('/api/reservations', authenticateToken, BookingController.create);
 app.get('/api/reservations/my', authenticateToken, BookingController.getMine);
 app.patch('/api/reservations/:id/cancel', authenticateToken, BookingController.cancel);
+
+// Endpoint de Navegación y Recorrido Asistido (Unidad 3 - Actividad 6)
+app.get('/api/navigation/optimal', async (req, res) => {
+  try {
+    const { criteria = 'EARLIEST', date } = req.query;
+    if (!date) {
+      return res.status(400).json({ message: 'El parámetro date (YYYY-MM-DD) es requerido' });
+    }
+    const result = await NavigationService.findOptimalRoute(criteria, date);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
 const startServer = async () => {
   await testConnection();
